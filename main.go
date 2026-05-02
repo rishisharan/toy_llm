@@ -41,109 +41,22 @@ func MatMul(a, b Matrix) Matrix {
 }
 
 func main() {
-	// 2x3 matrix
-	a := NewMatrix(2, 3)
-	a.Set(0, 0, 1)
-	a.Set(0, 1, 2)
-	a.Set(0, 2, 3)
-	a.Set(1, 0, 4)
-	a.Set(1, 1, 5)
-	a.Set(1, 2, 6)
+	text := "hello world how are you doing today"
 
-	// 3x2 matrix
-	b := NewMatrix(3, 2)
-	b.Set(0, 0, 7)
-	b.Set(0, 1, 8)
-	b.Set(1, 0, 9)
-	b.Set(1, 1, 10)
-	b.Set(2, 0, 11)
-	b.Set(2, 1, 12)
+	fmt.Println("=== Step 1: Tokenizing ===")
+	tok := NewTokenizer(text)
+	fmt.Printf("vocab size: %d unique characters\n", tok.Size)
+	fmt.Printf("encoded: %v\n", tok.Encode("hello"))
 
-	c := MatMul(a, b)
-	fmt.Println(c.Data) // expect [58 64 139 154]
+	fmt.Println("\n=== Step 2: Building model ===")
+	model := NewModel(tok.Size, 16, 64)
+	fmt.Println("transformer ready")
 
-	scores := []float32{2.0, 1.0, 0.5}
-	fmt.Println(softMax(scores))
+	fmt.Println("\n=== Step 3: Training ===")
+	TrainBackprop(&model, text, tok, 500, 0.001)
 
-	t := Transpose(a)
-	fmt.Println(t.Rows, t.Cols)
-
-	// in main()
-	Q := NewMatrix(3, 4) // 3 tokens, 4 dimensional
-	K := NewMatrix(3, 4)
-	V := NewMatrix(3, 4)
-
-	// fill with some dummy values
-	for i := range Q.Data {
-		Q.Data[i] = float32(i) * 0.1
-	}
-	for i := range K.Data {
-		K.Data[i] = float32(i) * 0.1
-	}
-	for i := range V.Data {
-		V.Data[i] = float32(i) * 0.1
-	}
-
-	out := Attention(Q, K, V)
-	fmt.Println(out.Rows, out.Cols) // should print: 3 4
-
-	tok := NewTokenizer("hello world")
-	ids := tok.Encode("hello")
-
-	emb := NewEmbedding(tok.Size, 8) // 8-dimensional embeddings
-	ouut := emb.Forward(ids)
-	ouut = AddPosEncoding(ouut)
-
-	fmt.Println(ouut.Rows, ouut.Cols) // 5 8 — 5 tokens, 8 dims each
-
-	fmt.Println(ids)             // some numbers
-	fmt.Println(tok.Decode(ids)) // "hello"
-	fmt.Println("vocab size:", tok.Size)
-
-	ff := NewFeedForward(8, 32)   // embedDim=8, hiddenDim=32
-	ot := ff.Forward(ouut)        // x is your 5x8 matrix from before
-	fmt.Println(ot.Rows, ot.Cols) // 5 8 — same shape in, same shape out
-
-	block := NewTransformerBlock(8, 32)
-	ouuut := block.Forward(ouut)
-	fmt.Println(ouuut.Rows, ouuut.Cols)
-
-	model := NewModel(tok.Size, 8, 32)
-
-	logits := model.Forward(ids)
-
-	fmt.Println(logits.Rows, logits.Cols) // 5 8 — 5 tokens, 8 vocab scores each
-
-	// targets = next token at each position
-	// "h"→"e"→"l"→"l"→"o"
-	targets := ids[1:]
-	targets = append(targets, ids[0]) // wrap around for last position
-
-	loss := CrossEntropyLoss(logits, targets)
-	fmt.Printf("initial loss: %.4f\n", loss)
-
-	// Train(&model, ids, 500, 0.01)
-
-	// fmt.Println(Generate(&model, tok, "h", 20, 0.6)) // lower temperature = more confident
-	// fmt.Println(Generate(&model, tok, "h", 20, 0.1))
-
-	// data, _ := os.ReadFile("transcript.txt")
-	// text := string(data)
-	text := "hello world how are you doing today hello world how are you"
-	// toke := NewTokenizer(text)
-	// modele := NewModel(toke.Size, 8, 16) // bigger dims for real data
-	// idse := toke.Encode(text[:100])      // start with first 500 chars
-
-	// Train(&modele, idse, 50, 0.01)
-
-	// fmt.Println(Generate(&modele, toke, "T", 50, 0.6))
-
-	toke := NewTokenizer(text)
-	modele := NewModel(toke.Size, 32, 128)
-
-	TrainBackprop(&modele, text, toke, 6000, 0.001)
-	fmt.Println(Generate(&modele, toke, "hello world", 100, 0.6))
-
+	fmt.Println("\n=== Step 4: Generating ===")
+	fmt.Println(Generate(&model, tok, "h", 50, 0.3))
 
 }
 
