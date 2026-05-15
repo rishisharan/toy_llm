@@ -1,4 +1,5 @@
 package main
+import "math/rand"
 
 type Matrix struct {
 	Data       []float32
@@ -48,4 +49,9 @@ func (m Matrix) applyTranspose(a Matrix) Matrix {
 		}
 	}
 	return result
+}
+
+
+func randFloat() float32 {
+    return float32(rand.Float64())
 }
