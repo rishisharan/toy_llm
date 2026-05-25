@@ -7,7 +7,7 @@ type Embedding struct {
 func NewEmbedding(vocabSize, embedDim int) Embedding {
 	w := newMatrix(vocabSize, embedDim)
 	for i := range w.Data {
-		w.Data[i] = (randFloat() - 0.5) * 0.01
+		w.Data[i] = (randFloat() - 0.5) * 0.1
 	}
 	return Embedding{Weight: w}
 }
