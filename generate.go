@@ -1,44 +1,34 @@
-// generate.go
 package main
 
-import (
-    "math/rand"
-    
-)
-
-func Generate(model *Model, tok Tokenizer, prompt string, maxTokens int, temperature float32) string {
-    ids := tok.Encode(prompt)
-
+func generate(model *Model, ids []int, maxTokens int, temperature float32) []int {
     for i := 0; i < maxTokens; i++ {
-        // forward pass — get logits for current sequence
-        logits := model.Forward(ids)
-
-        // take only the last row — prediction for next token
+        logits := forwardPass(model, ids)
+        
+        // take only last row — prediction for next token
         lastRow := logits.Data[(logits.Rows-1)*logits.Cols:]
-
-        // apply temperature — higher = more random, lower = more confident
+        
+        // apply temperature
         scaled := make([]float32, len(lastRow))
         for j, v := range lastRow {
             scaled[j] = v / temperature
         }
-
-        // sample from the distribution
-        probs := softMax(scaled)
-        next := sample(probs)
+        
+        // get probabilities
+        probs := softmax(scaled)
+        
+        // pick next token
+        next := argmax(probs)
         ids = append(ids, next)
     }
-
-    return tok.Decode(ids)
+    return ids
 }
 
-func sample(probs []float32) int {
-    r := rand.Float32()
-    var cumulative float32
-    for i, p := range probs {
-        cumulative += p
-        if r < cumulative {
-            return i
+func argmax(probs []float32) int {
+    maxIdx := 0
+    for i, v := range probs {
+        if v > probs[maxIdx] {
+            maxIdx = i
         }
     }
-    return len(probs) - 1
+    return maxIdx
 }
